@@ -14,20 +14,21 @@ export function cartTransformRun(input) {
   /** @type {Operation[]} */
   const operations = [];
 
-  for (const line of input.cart.lines) {
-    const isEnabled = line.enabled && line.enabled.value === "true";
-    if (!isEnabled) {
-      continue;
-    }
+  // Log the raw input payload to help debug
+  console.error("CartTransform input: ", JSON.stringify(input));
 
+  for (const line of input.cart.lines) {
     const areaVal = line.area ? parseFloat(line.area.value) : 0;
     const rateVal = line.rate ? parseFloat(line.rate.value) : 0;
+
+    console.error(`Checking line ${line.id} - Area: ${areaVal}, Rate: ${rateVal}`);
 
     if (isNaN(areaVal) || areaVal <= 0 || isNaN(rateVal) || rateVal <= 0) {
       continue;
     }
 
     const targetPrice = areaVal * rateVal;
+    console.error(`Adjusting price for line ${line.id} to: ${targetPrice.toFixed(2)}`);
 
     operations.push({
       lineUpdate: {
