@@ -4,15 +4,17 @@ import type {
   HeadersFunction,
   LoaderFunctionArgs,
 } from "react-router";
-import { useFetcher } from "react-router";
+import { useFetcher, useLoaderData } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
 import { boundary } from "@shopify/shopify-app-react-router/server";
+import prisma from "../db.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin } = await authenticate.admin(request);
 
   // Auto-activate the Cart Transform function if it isn't already active
+  let cartTransformStatus = "checking";
   try {
     const checkResponse = await admin.graphql(
       `#graphql
@@ -79,17 +81,34 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         );
         const activateJson = await activateResponse.json();
         console.log("Activation result:", JSON.stringify(activateJson));
+        cartTransformStatus = "activated";
       } else {
         console.log("Cart Transform function is already active.");
+        cartTransformStatus = "active";
       }
     } else {
       console.error("areapro-cart-transform Shopify Function not found in installed functions.");
+      cartTransformStatus = "function_not_found";
     }
   } catch (err) {
     console.error("Error checking/activating Cart Transform:", err);
+    cartTransformStatus = `error: ${err.message}`;
   }
 
-  return null;
+  let sessionCount = 0;
+  try {
+    sessionCount = await prisma.session.count();
+  } catch (e) {
+    console.error("Failed to count sessions:", e);
+  }
+
+  const dbUrl = process.env.DATABASE_URL || "not set";
+
+  return {
+    dbUrl: dbUrl.replace(/:[^:@]+@/, ":***@"),
+    sessionCount,
+    cartTransformStatus
+  };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -172,6 +191,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function Index() {
+  const { dbUrl, sessionCount, cartTransformStatus } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
   const shopify = useAppBridge();
   
@@ -267,6 +287,18 @@ export default function Index() {
         </s-paragraph>
         <s-paragraph>
           <s-text>Language &amp; Stack: </s-text> React Router, TypeScript, Prisma &amp; Rust/Wasm
+        </s-paragraph>
+      </s-section>
+
+      <s-section slot="aside" heading="Debug Info">
+        <s-paragraph>
+          <s-text>Database: </s-text> {dbUrl}
+        </s-paragraph>
+        <s-paragraph>
+          <s-text>Sessions in DB: </s-text> {sessionCount}
+        </s-paragraph>
+        <s-paragraph>
+          <s-text>Cart Transform Status: </s-text> {cartTransformStatus}
         </s-paragraph>
       </s-section>
     </s-page>
