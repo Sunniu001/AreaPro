@@ -1,0 +1,52 @@
+{
+  "payload": {
+    "export": "cart-transform-run",
+    "target": "cart.transform.run",
+    "input": {
+      "cart": {
+        "lines": [
+          {
+            "id": "gid://shopify/CartLine/1",
+            "quantity": 2,
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/1",
+              "title": "Wallpaper Variant"
+            },
+            "cost": {
+              "amountPerQuantity": {
+                "amount": "10.00",
+                "currencyCode": "USD"
+              }
+            },
+            "area": {
+              "value": "25.5"
+            },
+            "rate": {
+              "value": "3.5"
+            },
+            "enabled": {
+              "value": "true"
+            }
+          }
+        ]
+      }
+    },
+    "output": {
+      "operations": [
+        {
+          "lineUpdate": {
+            "cartLineId": "gid://shopify/CartLine/1",
+            "price": {
+              "adjustment": {
+                "fixedPricePerUnit": {
+                  "amount": "89.25"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

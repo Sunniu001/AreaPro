@@ -1,0 +1,43 @@
+# AreaPro: Custom Dimension Pricing
+# Sell wallpaper, fabric, flooring & any cut-to-size product by area or custom dimensions
+client_id = "815a3db0b5d1a3c47a84ad54bc3d851c"
+application_url = "https://a7545561111b1d.lhr.life"
+embedded = true
+name = "AreaPro"
+
+[access_scopes]
+# Cart Transform: price overrides on all plans (not just Plus) when installed as an app
+scopes = "read_products,write_products,read_cart_transforms,write_cart_transforms,read_metaobjects,write_metaobjects,write_metaobject_definitions"
+
+[auth]
+redirect_urls = [
+  "https://a7545561111b1d.lhr.life/auth/callback",
+  "https://a7545561111b1d.lhr.life/auth"
+]
+
+[webhooks]
+api_version = "2025-10"
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/app/uninstalled"
+  topics = ["app/uninstalled"]
+
+  [[webhooks.subscriptions]]
+  topics = ["app/scopes_update"]
+  uri = "/webhooks/app/scopes_update"
+
+  # GDPR compliance (required for public apps on App Store)
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/customers/data_request"
+  compliance_topics = ["customers/data_request"]
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/customers/redact"
+  compliance_topics = ["customers/redact"]
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/shop/redact"
+  compliance_topics = ["shop/redact"]
+
+[build]
+automatically_update_urls_on_dev = true

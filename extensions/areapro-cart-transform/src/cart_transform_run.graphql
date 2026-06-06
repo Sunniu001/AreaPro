@@ -1,0 +1,30 @@
+query CartTransformRunInput {
+  cart {
+    lines {
+      id
+      quantity
+      merchandise {
+        __typename
+        ... on ProductVariant {
+          id
+          title
+        }
+      }
+      cost {
+        amountPerQuantity {
+          amount
+          currencyCode
+        }
+      }
+      area: attribute(key: "_areapro_area") {
+        value
+      }
+      rate: attribute(key: "_areapro_rate") {
+        value
+      }
+      enabled: attribute(key: "_areapro_enabled") {
+        value
+      }
+    }
+  }
+}

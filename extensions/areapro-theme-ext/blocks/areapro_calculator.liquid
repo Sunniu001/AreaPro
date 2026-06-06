@@ -1,0 +1,466 @@
+{%- assign is_calculator_enabled = false -%}
+{%- if product.tags contains 'wallpaper' or product.type == 'Wallpaper' or product.tags contains 'areapro' -%}
+  {%- assign is_calculator_enabled = true -%}
+{%- endif -%}
+
+{%- if is_calculator_enabled -%}
+  {%- assign current_variant = product.selected_or_first_available_variant -%}
+  {%- assign base_price = current_variant.price -%}
+  
+  {%- assign material_option = null -%}
+  {%- for option in product.options_with_values -%}
+    {%- assign downcase_name = option.name | downcase -%}
+    {%- if downcase_name == 'material' -%}
+      {%- assign material_option = option -%}
+    {%- endif -%}
+  {%- endfor -%}
+
+  <div class="areapro-calculator" id="areapro-calc-{{ block.id }}"
+    data-base-price="{{ base_price }}"
+    data-variant-id="{{ current_variant.id }}"
+    data-product-id="{{ product.id }}"
+    data-min-area="{{ block.settings.min_area }}">
+
+    <!-- Title and Base Price -->
+    <div class="areapro-price-display">
+      <span class="areapro-price-amount" style="color: {{ block.settings.accent_color }}">{{ base_price | money_without_trailing_zeros }}</span>
+      <span class="areapro-price-unit">/sq.ft</span>
+    </div>
+
+    <!-- Dimensions Section -->
+    <div class="areapro-section">
+      <h3 class="areapro-subtitle" style="color: {{ block.settings.text_color }}">
+        {{ block.settings.heading }} 
+        <span class="areapro-title-hint">(Minimum Order: {{ block.settings.min_area }} Sq.Ft.)</span>
+      </h3>
+      <div class="areapro-dimensions-grid">
+        <div class="areapro-calc-group">
+          <label class="areapro-calc-label" for="areapro-height-{{ block.id }}">Height (feet) <span class="areapro-required">*</span></label>
+          <input type="number" id="areapro-height-{{ block.id }}" value="5" min="1" step="0.1" class="areapro-calc-input">
+        </div>
+        <div class="areapro-calc-group">
+          <label class="areapro-calc-label" for="areapro-width-{{ block.id }}">Width (feet) <span class="areapro-required">*</span></label>
+          <input type="number" id="areapro-width-{{ block.id }}" value="5" min="1" step="0.1" class="areapro-calc-input">
+        </div>
+      </div>
+      <div class="areapro-area-summary" style="color: {{ block.settings.text_color }}">
+        Total Area: <strong id="areapro-display-area-{{ block.id }}">25.00</strong> sq.ft.
+        <p id="areapro-error-text-{{ block.id }}" class="areapro-calc-error" style="display: none;">
+          Minimum order is {{ block.settings.min_area }} sq.ft. Please increase dimensions.
+        </p>
+      </div>
+    </div>
+
+    <!-- Material Section -->
+    {%- if material_option != null -%}
+      <div class="areapro-section">
+        <h3 class="areapro-subtitle" style="color: {{ block.settings.text_color }}">Material</h3>
+        <div class="areapro-material-grid" id="areapro-material-options-{{ block.id }}">
+          {%- for value in material_option.values -%}
+            <button
+              type="button"
+              class="areapro-material-btn {% if forloop.first %}selected{% endif %}"
+              data-value="{{ value | escape }}"
+            >
+              {{ value }}
+            </button>
+          {%- endfor -%}
+        </div>
+      </div>
+    {%- endif -%}
+
+    <!-- Total Price Display -->
+    <div class="areapro-total-price-section">
+      <span class="areapro-total-label" style="color: {{ block.settings.accent_color }}">Total:</span>
+      <span class="areapro-total-amount" id="areapro-total-price-{{ block.id }}" style="color: {{ block.settings.accent_color }}">
+        {%- assign initial_total = base_price | times: block.settings.min_area -%}
+        {{ initial_total | money }}
+      </span>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="areapro-actions">
+      <button type="button" class="areapro-btn areapro-btn-add-to-cart" id="areapro-add-to-cart-{{ block.id }}">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+        {{ block.settings.button_text }}
+      </button>
+    </div>
+
+    <!-- Hidden material value store -->
+    {%- if material_option != null -%}
+      <input type="hidden" id="areapro-selected-material-{{ block.id }}" value="{{ material_option.values.first | escape }}">
+    {%- endif -%}
+
+    <!-- Hidden data store for variants -->
+    <script type="application/json" id="areapro-variants-json-{{ block.id }}">
+      {{ product.variants | json }}
+    </script>
+  </div>
+
+  <style>
+    .areapro-calculator {
+      margin: 1.5rem 0;
+      padding: 1.5rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      background-color: #ffffff;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    }
+    .areapro-price-display {
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .areapro-price-amount {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+    .areapro-price-unit {
+      font-size: 0.875rem;
+      color: #6b7280;
+    }
+    .areapro-section {
+      margin-bottom: 1.25rem;
+    }
+    .areapro-subtitle {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0 0 0.75rem 0;
+      display: flex;
+      align-items: baseline;
+    }
+    .areapro-title-hint {
+      font-size: 0.75rem;
+      color: #6b7280;
+      font-weight: 400;
+      margin-left: 8px;
+    }
+    .areapro-dimensions-grid {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 0.75rem;
+    }
+    .areapro-calc-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .areapro-calc-label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #4b5563;
+      margin-bottom: 0.375rem;
+    }
+    .areapro-required {
+      color: #ef4444;
+    }
+    .areapro-calc-input {
+      background: #f9fafb;
+      border: 1px solid #d1d5db;
+      padding: 0.625rem 0.875rem;
+      border-radius: 6px;
+      font-size: 1rem;
+      color: #111827;
+      width: 100%;
+      outline: none;
+      box-sizing: border-box;
+      transition: border-color 0.15s ease-in-out;
+    }
+    .areapro-calc-input:focus {
+      border-color: #3b82f6;
+      background-color: #ffffff;
+    }
+    .areapro-area-summary {
+      font-size: 0.875rem;
+      margin-top: 0.5rem;
+    }
+    .areapro-calc-error {
+      color: #ef4444;
+      font-size: 0.875rem;
+      margin-top: 6px;
+      font-weight: 500;
+    }
+    .areapro-material-grid {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .areapro-material-btn {
+      background: #ffffff;
+      border: 1px solid #d1d5db;
+      padding: 0.75rem 1.25rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #374151;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .areapro-material-btn.selected {
+      background: #111827;
+      color: #ffffff;
+      border-color: #111827;
+    }
+    .areapro-total-price-section {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 1.25rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid #e5e7eb;
+    }
+    .areapro-total-label {
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .areapro-total-amount {
+      font-size: 1.75rem;
+      font-weight: 800;
+    }
+    .areapro-actions {
+      display: flex;
+    }
+    .areapro-btn {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      padding: 0.875rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: all 0.2s;
+    }
+    .areapro-btn-add-to-cart {
+      background: #111827;
+      color: #ffffff;
+      border: 1px solid #111827;
+    }
+    .areapro-btn-add-to-cart:hover {
+      background: #1f2937;
+      border-color: #1f2937;
+    }
+    .areapro-btn:disabled,
+    .areapro-btn.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background: #9ca3af;
+      border-color: #9ca3af;
+    }
+  </style>
+
+  <script>
+    (function() {
+      const blockId = "{{ block.id }}";
+      const calcContainer = document.getElementById(`areapro-calc-${blockId}`);
+      if (!calcContainer) return;
+
+      const basePriceInCents = parseInt(calcContainer.getAttribute('data-base-price'), 10) || 0;
+      const defaultVariantId = parseInt(calcContainer.getAttribute('data-variant-id'), 10);
+      const minArea = parseFloat(calcContainer.getAttribute('data-min-area')) || 25;
+
+      let variants = [];
+      try {
+        const variantsJsonEl = document.getElementById(`areapro-variants-json-${blockId}`);
+        if (variantsJsonEl) {
+          variants = JSON.parse(variantsJsonEl.textContent) || [];
+        }
+      } catch (e) {
+        console.error('Failed to parse variants JSON', e);
+      }
+
+      const heightInput = document.getElementById(`areapro-height-${blockId}`);
+      const widthInput = document.getElementById(`areapro-width-${blockId}`);
+      const displayArea = document.getElementById(`areapro-display-area-${blockId}`);
+      const errorText = document.getElementById(`areapro-error-text-${blockId}`);
+      const totalAmountDisplay = document.getElementById(`areapro-total-price-${blockId}`);
+      const addToCartBtn = document.getElementById(`areapro-add-to-cart-${blockId}`);
+      const selectedMaterialInput = document.getElementById(`areapro-selected-material-${blockId}`);
+
+      function formatMoney(cents) {
+        return '₹' + (cents / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+
+      // Resolve current variant from variants list matching material choice
+      function getCurrentVariant() {
+        const material = selectedMaterialInput ? selectedMaterialInput.value : null;
+        if (!material || variants.length === 0) {
+          const urlParams = new URLSearchParams(window.location.search);
+          const fromUrl = urlParams.get('variant');
+          if (fromUrl) {
+            const v = variants.find(x => x.id === parseInt(fromUrl, 10));
+            if (v) return v;
+          }
+          const v = variants.find(x => x.id === defaultVariantId);
+          if (v) return v;
+          return { id: defaultVariantId, price: basePriceInCents };
+        }
+
+        const matched = variants.find(v => {
+          return (v.option1 && v.option1.toLowerCase() === material.toLowerCase()) ||
+                 (v.option2 && v.option2.toLowerCase() === material.toLowerCase()) ||
+                 (v.option3 && v.option3.toLowerCase() === material.toLowerCase()) ||
+                 (v.title && v.title.toLowerCase() === material.toLowerCase());
+        });
+        return matched || variants.find(x => x.id === defaultVariantId) || variants[0] || { id: defaultVariantId, price: basePriceInCents };
+      }
+
+      function updateCalculator() {
+        const currentVariant = getCurrentVariant();
+        const priceCents = currentVariant ? currentVariant.price : basePriceInCents;
+        const height = parseFloat(heightInput.value) || 0;
+        const width = parseFloat(widthInput.value) || 0;
+        const area = height * width;
+        displayArea.textContent = area.toFixed(2);
+        
+        const isAreaValid = area >= minArea;
+        const calcArea = isAreaValid ? area : minArea;
+        
+        totalAmountDisplay.innerHTML = formatMoney(calcArea * priceCents);
+        
+        if (!isAreaValid) {
+          errorText.style.display = 'block';
+          addToCartBtn.disabled = true;
+          addToCartBtn.classList.add('disabled');
+        } else {
+          errorText.style.display = 'none';
+          addToCartBtn.disabled = false;
+          addToCartBtn.classList.remove('disabled');
+        }
+      }
+
+      addToCartBtn.addEventListener('click', async function(e) {
+        e.preventDefault();
+        if (addToCartBtn.disabled) return;
+
+        const currentVariant = getCurrentVariant();
+        const variantId = currentVariant ? currentVariant.id : defaultVariantId;
+        if (!variantId) {
+          alert('Could not determine product variant. Please refresh and try again.');
+          return;
+        }
+
+        const height = parseFloat(heightInput.value) || 0;
+        const width = parseFloat(widthInput.value) || 0;
+        const area = height * width;
+        
+        if (area < minArea) {
+          alert(`Minimum dimensions not met. Minimum required area is ${minArea} sq.ft.`);
+          return;
+        }
+        
+        const material = selectedMaterialInput ? selectedMaterialInput.value : null;
+        const priceCents = currentVariant ? currentVariant.price : basePriceInCents;
+
+        const properties = {
+          'Height (ft)': height.toFixed(1),
+          'Width (ft)': width.toFixed(1),
+          'Area (sq.ft)': area.toFixed(1),
+          '_areapro_area': area.toFixed(2),
+          '_areapro_rate': (priceCents / 100).toFixed(2),
+          '_areapro_enabled': "true"
+        };
+        if (material) properties['Material'] = material;
+
+        const originalHTML = addToCartBtn.innerHTML;
+        addToCartBtn.innerHTML = 'Adding...';
+        addToCartBtn.disabled = true;
+
+        try {
+          const response = await fetch('/cart/add.js', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ id: variantId, quantity: 1, properties: properties })
+          });
+          const data = await response.json();
+
+          if (response.ok) {
+            addToCartBtn.innerHTML = '✓ Added!';
+            addToCartBtn.style.background = '#059669';
+            addToCartBtn.style.borderColor = '#059669';
+
+            fetch('/cart.js').then(r => r.json()).then(cart => {
+              document.querySelectorAll('[data-cart-count], .cart-count, #cart-count').forEach(el => {
+                el.textContent = cart.item_count;
+              });
+            });
+            
+            document.dispatchEvent(new CustomEvent('cart:refresh', { bubbles: true }));
+            document.dispatchEvent(new CustomEvent('cart:updated', { bubbles: true, detail: { cart: data } }));
+
+            setTimeout(() => {
+              addToCartBtn.innerHTML = originalHTML;
+              addToCartBtn.style.background = '';
+              addToCartBtn.style.borderColor = '';
+              addToCartBtn.disabled = false;
+            }, 2500);
+          } else {
+            throw new Error(data.description || 'Failed to add to cart');
+          }
+        } catch (err) {
+          addToCartBtn.innerHTML = originalHTML;
+          addToCartBtn.disabled = false;
+          alert('Error: ' + err.message);
+        }
+      });
+
+      heightInput.addEventListener('input', updateCalculator);
+      widthInput.addEventListener('input', updateCalculator);
+
+      const materialSection = document.getElementById(`areapro-material-options-${blockId}`);
+      if (materialSection) {
+        materialSection.addEventListener('click', function(e) {
+          const btn = e.target.closest('.areapro-material-btn');
+          if (!btn) return;
+          materialSection.querySelectorAll('.areapro-material-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          const val = btn.getAttribute('data-value');
+          if (selectedMaterialInput) selectedMaterialInput.value = val;
+          
+          // Sync with native variant picker (only scoped to current product section)
+          const mainSection = calcContainer.closest('section') || document.querySelector('.product-information') || document;
+          mainSection.querySelectorAll('input[type="radio"]').forEach(el => {
+            if (el.value === val) { el.checked = true; el.dispatchEvent(new Event('change', { bubbles: true })); }
+          });
+          mainSection.querySelectorAll('select').forEach(el => {
+            const opt = Array.from(el.options).find(o => o.value === val || o.text === val);
+            if (opt) { el.value = opt.value; el.dispatchEvent(new Event('change', { bubbles: true })); }
+          });
+
+          // Sync URL variant param
+          const currentVariant = getCurrentVariant();
+          if (currentVariant) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('variant', currentVariant.id);
+            window.history.replaceState({}, '', url.toString());
+          }
+
+          updateCalculator();
+        });
+      }
+
+      updateCalculator();
+    })();
+  </script>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "AreaPro Calculator",
+  "target": "section",
+  "templates": ["product"],
+  "settings": [
+    { "type": "product", "id": "product", "label": "Product", "autofill": true },
+    { "type": "text", "id": "heading", "label": "Calculator Heading", "default": "Enter Dimensions" },
+    { "type": "number", "id": "min_area", "label": "Minimum Area (Sq.Ft.)", "default": 25 },
+    { "type": "text", "id": "button_text", "label": "Button Text", "default": "ADD TO CART" },
+    { "type": "color", "id": "text_color", "label": "Text Color", "default": "#111827" },
+    { "type": "color", "id": "accent_color", "label": "Accent Color", "default": "#b02a2a" }
+  ]
+}
+{% endschema %}
