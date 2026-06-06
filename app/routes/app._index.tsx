@@ -17,11 +17,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { admin } = await authenticate.admin(request);
   
-  // Create a demo wallpaper product tagged with 'areapro'
+  // Create a demo wallpaper product tagged with 'areapro' using the productSet mutation
   const response = await admin.graphql(
     `#graphql
-      mutation populateProduct($product: ProductCreateInput!) {
-        productCreate(product: $product) {
+      mutation productSet($input: ProductSetInput!) {
+        productSet(input: $input) {
           product {
             id
             title
@@ -36,23 +36,45 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               }
             }
           }
+          userErrors {
+            field
+            message
+          }
         }
       }`,
     {
       variables: {
-        product: {
+        input: {
           title: "Custom Premium Wallpaper (AreaPro Demo)",
           tags: ["areapro", "wallpaper"],
           status: "ACTIVE",
-          options: ["Material"],
+          productOptions: [
+            {
+              name: "Material",
+              values: [
+                { name: "Non-Woven Fabric" },
+                { name: "Canvas Texture" }
+              ]
+            }
+          ],
           variants: [
             {
-              price: "120.00",
-              options: ["Non-Woven Fabric"]
+              optionValues: [
+                {
+                  optionName: "Material",
+                  name: "Non-Woven Fabric"
+                }
+              ],
+              price: "120.00"
             },
             {
-              price: "180.00",
-              options: ["Canvas Texture"]
+              optionValues: [
+                {
+                  optionName: "Material",
+                  name: "Canvas Texture"
+                }
+              ],
+              price: "180.00"
             }
           ]
         },
@@ -61,8 +83,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   );
   
   const responseJson = await response.json();
+  
+  if (responseJson.data?.productSet?.userErrors?.length > 0) {
+    console.error("Shopify productSet errors:", responseJson.data.productSet.userErrors);
+  }
+
   return {
-    product: responseJson.data?.productCreate?.product || null,
+    product: responseJson.data?.productSet?.product || null,
   };
 };
 
