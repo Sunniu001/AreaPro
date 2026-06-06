@@ -10,7 +10,85 @@ import { authenticate } from "../shopify.server";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
+  const { admin } = await authenticate.admin(request);
+
+  // Auto-activate the Cart Transform function if it isn't already active
+  try {
+    const checkResponse = await admin.graphql(
+      `#graphql
+        query checkCartTransforms {
+          cartTransforms(first: 10) {
+            nodes {
+              id
+              functionId
+            }
+          }
+        }
+      `
+    );
+    const checkJson = await checkResponse.json();
+    const activeTransforms = checkJson.data?.cartTransforms?.nodes || [];
+
+    const funcsResponse = await admin.graphql(
+      `#graphql
+        query checkFunctions {
+          shopifyFunctions(first: 50) {
+            nodes {
+              id
+              title
+              apiType
+            }
+          }
+        }
+      `
+    );
+    const funcsJson = await funcsResponse.json();
+    const functions = funcsJson.data?.shopifyFunctions?.nodes || [];
+    const targetFunc = functions.find(
+      (f) =>
+        f.title.includes("areapro-cart-transform") ||
+        f.apiType === "cart_transform"
+    );
+
+    if (targetFunc) {
+      const isAlreadyActive = activeTransforms.some(
+        (t) => t.functionId === targetFunc.id
+      );
+
+      if (!isAlreadyActive) {
+        console.log(`Activating Cart Transform function ${targetFunc.id}...`);
+        const activateResponse = await admin.graphql(
+          `#graphql
+            mutation activateCartTransform($functionId: String!) {
+              cartTransformCreate(functionId: $functionId) {
+                cartTransform {
+                  id
+                }
+                userErrors {
+                  field
+                  message
+                }
+              }
+            }
+          `,
+          {
+            variables: {
+              functionId: targetFunc.id,
+            },
+          }
+        );
+        const activateJson = await activateResponse.json();
+        console.log("Activation result:", JSON.stringify(activateJson));
+      } else {
+        console.log("Cart Transform function is already active.");
+      }
+    } else {
+      console.error("areapro-cart-transform Shopify Function not found in installed functions.");
+    }
+  } catch (err) {
+    console.error("Error checking/activating Cart Transform:", err);
+  }
+
   return null;
 };
 
