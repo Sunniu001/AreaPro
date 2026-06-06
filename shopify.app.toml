@@ -1,7 +1,7 @@
 # AreaPro: Custom Dimension Pricing
 # Sell wallpaper, fabric, flooring & any cut-to-size product by area or custom dimensions
 client_id = "815a3db0b5d1a3c47a84ad54bc3d851c"
-application_url = "https://a7545561111b1d.lhr.life"
+application_url = "https://area-r7evfhefh-sunniys-projects.vercel.app"
 embedded = true
 name = "AreaPro"
 
@@ -11,8 +11,8 @@ scopes = "read_products,write_products,read_cart_transforms,write_cart_transform
 
 [auth]
 redirect_urls = [
-  "https://a7545561111b1d.lhr.life/auth/callback",
-  "https://a7545561111b1d.lhr.life/auth"
+  "https://area-r7evfhefh-sunniys-projects.vercel.app/auth/callback",
+  "https://area-r7evfhefh-sunniys-projects.vercel.app/auth"
 ]
 
 [webhooks]
